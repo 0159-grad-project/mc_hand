@@ -1,0 +1,128 @@
+import json
+import os
+import numpy as np
+from datetime import datetime
+from nokov.nokovsdk import *
+import sys
+import time
+from marker_tracker import Tracker, pprint_dict
+
+CAMERA_LOCATION_FILE = os.path.join(os.path.dirname(__file__), 'camera_location.json')
+
+def load_camera_location(path=CAMERA_LOCATION_FILE):
+    try:
+        with open(path, 'r') as f:
+            data = json.load(f)
+        camera_loc = data['camera_loc']
+        return np.array(camera_loc, dtype=float)
+    except Exception as exc:
+        print(f'Failed to load camera location from {path}: {exc}')
+
+CAMERA_LOC = load_camera_location()
+
+def get_frame_timestamp(frame_data):
+    frame = frame_data.contents
+    return frame.iTimeStamp
+
+def get_frame_coords(frame_data):
+    frame = frame_data.contents
+    n_other_markers = frame.nOtherMarkers
+    results = []
+    for i in range(n_other_markers):
+        results.append(list(frame.OtherMarkers[i]))
+    return results
+
+def remove_camera_marker(coords, threshold=10):
+    if not coords:
+        return coords
+    distances = np.linalg.norm(np.array(coords) - CAMERA_LOC, axis=1)
+    min_index = np.argmin(distances)
+    if distances[min_index] < threshold:
+        coords.pop(min_index)
+    return coords
+
+class MarkerPosition(object):
+    def __init__(self):
+        self.client = PySDKClient()
+        ver = self.client.PySeekerVersion()
+        print('SeekerSDK Sample Client 2.4.0.3142(SeekerSDK ver. %d.%d.%d.%d)' % (ver[0], ver[1], ver[2], ver[3]))
+
+        self.client.PySetVerbosityLevel(0)
+        self.client.PySetMessageCallback(MarkerPosition.log_callback)
+        self.client.PySetDataCallback(self.data_callback, None)
+        ret = self.client.Initialize(bytes("10.1.1.198", encoding="utf8"))
+
+        if ret != 0:
+            print('MC_Connection_Error')
+            sys.exit(-1)
+        
+        self.tracker = Tracker()
+
+    def data_callback(self, mc_data, user_data):
+        if mc_data is None:
+            print('No_Data_This_Frame')
+            return
+                
+        time_stamp = get_frame_timestamp(mc_data)
+        coords = get_frame_coords(mc_data)
+        coords = remove_camera_marker(coords)
+        self.tracker.assign(time_stamp, coords)
+    
+
+    @staticmethod
+    def log_callback(log_level, log_msg):
+        log_level_str = {
+            1: "Error",
+            2: "Warning",
+            3: "Info",
+            4: "Debug"
+        }
+        log_level_msg = log_level_str.get(log_level, "None")
+        log_msg_value = cast(log_msg, c_char_p).value
+        print(f"[{log_level_msg}] {log_msg_value}")
+
+    def get_position(self):
+        return self.tracker.get()
+
+def pprint(locs):
+    if locs is None:
+        return
+    index = 0
+    for loc in locs:
+        print(index, end=', ')
+        if loc is None:
+            print('None')
+        else:
+            print(f'{loc[0]:.1f}, {loc[1]:.1f}, {loc[2]:.1f}')
+        index += 1
+        
+
+def main():
+    mp = MarkerPosition()
+    date = datetime.today().strftime('%Y%m%d')
+    os.makedirs(f'./{date}_logs', exist_ok = True)
+    time_str = datetime.today().strftime('%H%M')
+    log_path = f'./{date}_logs/coords_log_{time_str}.txt'
+
+    with open(log_path, 'w') as logs:
+        prev_time = time.time()
+        while True:
+            locs = mp.get_position()
+            current_time = time.time()
+            print(locs, file=logs)
+            
+            if current_time - prev_time >= 3.0:
+                if locs is not None:
+                    k = list(locs.keys())[0]
+                    print(k)
+                    pprint(locs[k])
+                print('=====================================')
+                prev_time = current_time
+        
+            time.sleep(0.01)
+            
+
+
+if __name__ == '__main__':
+    # time.sleep(10)
+    main()
