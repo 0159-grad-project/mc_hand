@@ -99,10 +99,9 @@ def pprint(locs):
 
 def main():
     mp = MarkerPosition()
-    date = datetime.today().strftime('%Y%m%d')
-    os.makedirs(f'./{date}_logs', exist_ok = True)
-    time_str = datetime.today().strftime('%H%M')
-    log_path = f'./{date}_logs/coords_log_{time_str}.txt'
+    date = datetime.now().strftime("%m%d")
+    time = datetime.now().strftime("%H%M")
+    log_path = f"./logs/{date}_{time}_mocap_log.txt"
 
     with open(log_path, 'w') as logs:
         prev_time = time.time()
