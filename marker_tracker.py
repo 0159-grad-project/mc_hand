@@ -51,10 +51,9 @@ class Tracker:
                 # i -> j
                 if assigned_result[j] is None:
                     assigned_result[j] = now_loc[i]
-                    # self.index_coords_map[j] = now_loc[i]
+                    self.index_coords_map[j] = now_loc[i]
                     used_i[i] = True
             self.coords_this_frame = copy.deepcopy(assigned_result)
-            self.index_coords_map = copy.deepcopy(assigned_result)
         self.lock.release()
 
     def get(self):
