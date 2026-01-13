@@ -5,14 +5,6 @@ import heapq
 
 NUMBER_MARKERS = 6
 
-def pprint_dict(d, indent=1):
-    print("{")
-    for k, v in d.items():
-        formatted_v = ", ".join(f"{x:.1f}" for x in v)
-        print(' '*indent + f"{k} : {formatted_v}")
-    print("}")
-    print("--------------------")
-
 class Tracker:
     def __init__(self, vis=False):
         self.index_coords_map = None  # 把上一帧的坐标作为分配标准
@@ -59,29 +51,7 @@ class Tracker:
     def get(self):
         self.lock.acquire()
         coords = copy.deepcopy(self.coords_this_frame)
-        
-        # if self.vis:
-        #     if self.index_coords_map is not None:
-        #         pprint_dict(self.index_coords_map)
-        #     if coords is not None:
-        #         for i, c in enumerate(coords):
-        #             if c is None:
-        #                 print(f'index {i} is lost! previous location was {self.index_coords_map[i]}')
 
         result = {self.time_stamp: coords}
         self.lock.release()
         return result
-    
-
-def main():
-    test_list = []
-    heapq.heappush(test_list, 3)
-    heapq.heappush(test_list, 5)
-    heapq.heappush(test_list, 1)
-
-    print(heapq.heappop(test_list))
-    print(test_list)
-
-
-if __name__ == '__main__':
-    main()
