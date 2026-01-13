@@ -32,7 +32,7 @@ def get_frame_coords(frame_data):
         results.append(list(frame.OtherMarkers[i]))
     return results
 
-def remove_camera_marker(coords, threshold=10):
+def remove_camera_marker(coords, threshold=50):
     if not coords:
         return coords
     distances = np.linalg.norm(np.array(coords) - CAMERA_LOC, axis=1)
@@ -123,5 +123,5 @@ def main():
 
 
 if __name__ == '__main__':
-    # time.sleep(10)
+    time.sleep(11)
     main()

@@ -78,7 +78,7 @@ class CameraLocationRecorder(object):
         with open(self.save_path, 'w') as f:
             json.dump(payload, f)
 
-        print(f'Camera location updated -> {payload["camera_loc"]}')
+        print(f'Camera location updated at {payload["updated_at"]} -> {payload["camera_loc"]}')
 
     @staticmethod
     def log_callback(log_level, log_msg):
