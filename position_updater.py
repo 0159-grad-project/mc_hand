@@ -100,8 +100,8 @@ def pprint(locs):
 def main():
     mp = MarkerPosition()
     date = datetime.now().strftime("%m%d")
-    time = datetime.now().strftime("%H%M")
-    log_path = f"./logs/{date}_{time}_mocap_log.txt"
+    t = datetime.now().strftime("%H%M")
+    log_path = f"./logs/{date}_{t}_mocap_log.txt"
 
     with open(log_path, 'w') as logs:
         prev_time = time.time()
@@ -123,5 +123,5 @@ def main():
 
 
 if __name__ == '__main__':
-    time.sleep(11)
+    #time.sleep(11)
     main()
