@@ -6,6 +6,11 @@ from datetime import datetime
 from threading import Lock
 from nokov.nokovsdk import *
 
+# ----------------------------
+# 记录相机坐标以便之后排除（相机打开时会被动捕系统误认为一个标记）
+# 需确保场地中只有相机，没有其它动捕球
+# ----------------------------
+
 CAMERA_LOCATION_FILE = os.path.join(os.path.dirname(__file__), 'camera_location.json')
 SDK_SERVER = bytes("10.1.1.198", encoding="utf8")
 
