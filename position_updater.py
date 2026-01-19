@@ -5,9 +5,16 @@ from datetime import datetime
 from nokov.nokovsdk import *
 import sys
 import time
-from marker_tracker import Tracker, pprint_dict
+import msgpack
+import zmq
+from marker_tracker import Tracker
 
 CAMERA_LOCATION_FILE = os.path.join(os.path.dirname(__file__), 'camera_location.json')
+
+ENABLE_PUB = True
+PUB_PORT = 5556
+PUB_TOPIC = b"mocap"
+
 
 def load_camera_location(path=CAMERA_LOCATION_FILE):
     try:
@@ -103,12 +110,31 @@ def main():
     t = datetime.now().strftime("%H%M")
     log_path = f"./logs/{date}_{t}_mocap_log.txt"
 
+    pub = None
+    pub_ctx = None
+    if ENABLE_PUB:
+        pub_ctx = zmq.Context.instance()
+        pub = pub_ctx.socket(zmq.PUB)
+        pub.bind(f"tcp://*:{PUB_PORT}")
+
     with open(log_path, 'w') as logs:
         prev_time = time.time()
         while True:
             locs = mp.get_position()
             current_time = time.time()
             print(locs, file=logs)
+
+            if ENABLE_PUB:
+                ts, coords = locs
+                if ts is not None and all(x is not None for x in coords):
+                    payload = {
+                        "src": "mocap",
+                        "markers": coords,
+                        "timestamp": ts,
+                    }
+                    pub.send_multipart(
+                        [PUB_TOPIC, msgpack.packb(payload, use_bin_type=True)]
+                    )
             
             if current_time - prev_time >= 3.0:
                 if locs is not None:
@@ -119,7 +145,11 @@ def main():
                 prev_time = current_time
         
             time.sleep(0.01)
-            
+
+    if pub is not None:
+        pub.close(0)
+    if pub_ctx is not None:
+        pub_ctx.term()
 
 
 if __name__ == '__main__':
