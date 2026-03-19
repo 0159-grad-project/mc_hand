@@ -1,9 +1,10 @@
 import numpy as np
+import winsound
 import copy
 from threading import Lock
 import heapq
 
-NUMBER_MARKERS = 6
+NUMBER_MARKERS = 12
 
 class Tracker:
     def __init__(self, vis=False):
@@ -18,6 +19,9 @@ class Tracker:
         self.time_stamp = time_stamp
 
         if self.index_coords_map is None:
+            if len(loc) != NUMBER_MARKERS:
+                print(len(loc))
+                winsound.MessageBeep()
             assert len(loc) == NUMBER_MARKERS
             self.index_coords_map = {i: c for i, c in enumerate(loc)}
             self.coords_this_frame = copy.deepcopy(loc)

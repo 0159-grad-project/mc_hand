@@ -11,7 +11,7 @@ from marker_tracker import Tracker
 
 CAMERA_LOCATION_FILE = os.path.join(os.path.dirname(__file__), 'camera_location.json')
 
-ENABLE_PUB = True
+ENABLE_PUB = False
 PUB_PORT = 5556
 PUB_TOPIC = b"mocap"
 
@@ -43,10 +43,8 @@ def remove_camera_marker(coords, threshold=50):
     if not coords:
         return coords
     distances = np.linalg.norm(np.array(coords) - CAMERA_LOC, axis=1)
-    min_index = np.argmin(distances)
-    if distances[min_index] < threshold:
-        coords.pop(min_index)
-    return coords
+    new_coords = [coord for coord, dist in zip(coords, distances) if dist >= threshold]
+    return new_coords
 
 class MarkerPosition(object):
     def __init__(self):
@@ -125,7 +123,7 @@ def main():
             print(locs, file=logs)
 
             if ENABLE_PUB:
-                ts, coords = locs
+                ts, coords = next(iter(locs.items()))
                 if ts is not None and all(x is not None for x in coords):
                     payload = {
                         "src": "mocap",
