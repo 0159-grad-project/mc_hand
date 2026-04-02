@@ -63,27 +63,28 @@ class CameraLocationRecorder(object):
             print(f'Invalid_Marker_Count: expected 1, got {len(coords)}. Skipping update.')
             return
 
-        camera_loc = list(coords[0])
-        if len(camera_loc) != 3:
-            print('Invalid_Camera_Location_Length')
-            return
+        camera_locs = []
+        for camera_loc in coords:
+            camera_locs.append(list(camera_loc))
+
+        camera_locs.sort(key=lambda coord: tuple(float(c) for c in coord))
 
         with self.lock:
-            self.latest = camera_loc
+            self.latest = camera_locs
             self.time_stamp = time_stamp
-            self._write_location(camera_loc, time_stamp)
+            self._write_location(camera_locs, time_stamp)
 
-    def _write_location(self, camera_loc, time_stamp):
+    def _write_location(self, camera_locs, time_stamp):
         payload = {
-            'camera_loc': [float(c) for c in camera_loc],
+            'camera_locs': [[float(c) for c in camera_loc] for camera_loc in camera_locs],
             'time_stamp': int(time_stamp),
             'updated_at': datetime.now().astimezone().isoformat()
         }
 
-        with open(self.save_path, 'w') as f:
-            json.dump(payload, f)
+        # with open(self.save_path, 'w') as f:
+        #     json.dump(payload, f)
 
-        print(f'Camera location updated at {payload["updated_at"]} -> {payload["camera_loc"]}')
+        print(f'Camera locations updated at {payload["updated_at"]} -> {payload["camera_locs"]}')
 
     @staticmethod
     def log_callback(log_level, log_msg):

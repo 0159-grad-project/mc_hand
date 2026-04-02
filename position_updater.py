@@ -16,16 +16,18 @@ PUB_PORT = 5556
 PUB_TOPIC = b"mocap"
 
 
-def load_camera_location(path=CAMERA_LOCATION_FILE):
+def load_camera_locations(path=CAMERA_LOCATION_FILE):
     try:
         with open(path, 'r') as f:
             data = json.load(f)
-        camera_loc = data['camera_loc']
-        return np.array(camera_loc, dtype=float)
+
+        camera_locs = data['camera_locs']
+        camera_locs = np.array(camera_locs, dtype=float)
+        return camera_locs
     except Exception as exc:
         print(f'Failed to load camera location from {path}: {exc}')
 
-CAMERA_LOC = load_camera_location()
+CAMERA_LOCS = load_camera_locations()
 
 def get_frame_timestamp(frame_data):
     frame = frame_data.contents
@@ -40,10 +42,13 @@ def get_frame_coords(frame_data):
     return results
 
 def remove_camera_marker(coords, threshold=50):
-    if not coords:
+    if not coords or CAMERA_LOCS.size == 0:
         return coords
-    distances = np.linalg.norm(np.array(coords) - CAMERA_LOC, axis=1)
-    new_coords = [coord for coord, dist in zip(coords, distances) if dist >= threshold]
+
+    coords_array = np.array(coords, dtype=float)
+    distances = np.linalg.norm(coords_array[:, None, :] - CAMERA_LOCS[None, :, :], axis=2)
+    keep_mask = np.all(distances >= threshold, axis=1)
+    new_coords = [coord for coord, keep in zip(coords, keep_mask) if keep]
     return new_coords
 
 class MarkerPosition(object):
